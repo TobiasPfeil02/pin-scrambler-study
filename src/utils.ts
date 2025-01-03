@@ -19,26 +19,26 @@ const conditionMapping = {
 
 export async function loadVideos(condition: string) {
     const allVideos = [
-        "A_4062.mp4",
-        "A_5268.mp4",
-        "A_5301.mp4",
-        "A_6510.mp4",
-        "A_9289.mp4",
-        "B_1745.mp4",
-        "B_5610.mp4",
-        "B_7441.mp4",
-        "B_7814.mp4",
-        "B_9373.mp4",
-        "C_1114.mp4",
-        "C_4960.mp4",
-        "C_5201.mp4",
-        "C_7865.mp4",
-        "C_9216.mp4",
-        "D_3502.mp4",
-        "D_5294.mp4",
-        "D_7500.mp4",
-        "D_8831.mp4",
-        "D_9953.mp4"
+        "A_4062",
+        "A_5268",
+        "A_5301",
+        "A_6510",
+        "A_9289",
+        "B_1745",
+        "B_5610",
+        "B_7441",
+        "B_7814",
+        "B_9373",
+        "C_1114",
+        "C_4960",
+        "C_5201",
+        "C_7865",
+        "C_9216",
+        "D_3502",
+        "D_5294",
+        "D_7500",
+        "D_8831",
+        "D_9953"
     ];
     const mappedCondition = conditionMapping[condition as keyof typeof conditionMapping];
     // Filter videos based on condition prefix
@@ -47,13 +47,13 @@ export async function loadVideos(condition: string) {
     // Dynamically import filtered videos and extract pincode
     return await Promise.all(
         filteredVideos.map(async (video) => {
-            const module = await import(`./assets/${video}`);
-            const pinCode = video.split("_")[1].split(".")[0];
+            const module = await import(`./assets/${video}.mp4`);
+            const pinCode = video.split("_")[1];
             return {video: module.default, pinCode};
         })
     );
 }
-export function shuffleArray(array, seed:number) {
+export function shuffleArray(array: Array<any>, seed:number) {
     let m = array.length, t, i;
 
     // Seeded random function
