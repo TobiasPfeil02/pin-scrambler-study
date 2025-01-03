@@ -15,7 +15,7 @@ function Home() {
 
     function handleNavigate() {
         if (!selectedParticipant) return;
-        else navigate(`./participant/${selectedParticipant}/test`);
+        else navigate(`./participant/${selectedParticipant}/test/1`);
     }
 
     return (
