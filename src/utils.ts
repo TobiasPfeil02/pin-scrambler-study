@@ -1,3 +1,7 @@
+import { saveAs } from "file-saver";
+import path from "path";
+import * as fs from "node:fs";
+
 export const latinSquareOrder = (participantNumber: number | undefined) => {
     if (!participantNumber) return "invalid participant number"
     const latinSquare = [
@@ -74,3 +78,42 @@ export function shuffleArray(array: Array<any>, seed:number) {
 
     return array;
 }
+
+export interface ParticipantData {
+    participant: string;
+    condition: string;
+    videoIndex: number;
+    pinCode: string;
+    guess: string;
+    correct: boolean;
+}
+
+// Helper function to write data to a CSV
+export function writeDataToCSV(data: ParticipantData[]): void {
+    const headers = ["Participant", "Condition", "VideoIndex", "PinCode", "Guess", "Correct"];
+    const rows = data.map(({ participant, condition, videoIndex, pinCode, guess, correct }) => [
+        participant,
+        condition,
+        videoIndex,
+        pinCode,
+        guess,
+        correct.toString()
+    ]);
+
+    const csvContent = [headers, ...rows]
+        .map(row => row.join(","))
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "participant_data.csv");
+
+    // Save to the public directory
+    const publicDirPath = path.resolve("../public/participant_data.csv");
+    try {
+        fs.writeFileSync(publicDirPath, csvContent, "utf-8");
+        console.log(`CSV successfully written to ${publicDirPath}`);
+    } catch (error) {
+        console.error("Failed to write CSV to public directory:", error);
+    }
+}
+
