@@ -1,6 +1,4 @@
-import { saveAs } from "file-saver";
-import path from "path";
-import * as fs from "node:fs";
+import {saveAs} from "file-saver";
 
 export const latinSquareOrder = (participantNumber: number | undefined) => {
     if (!participantNumber) return "invalid participant number"
@@ -57,11 +55,12 @@ export async function loadVideos(condition: string) {
         })
     );
 }
-export function shuffleArray(array: Array<any>, seed:number) {
+
+export function shuffleArray(array: Array<any>, seed: number) {
     let m = array.length, t, i;
 
     // Seeded random function
-    function seededRandom(seed:number) {
+    function seededRandom(seed: number) {
         const x = Math.sin(seed++) * 10000;
         return x - Math.floor(x);
     }
@@ -88,32 +87,86 @@ export interface ParticipantData {
     correct: boolean;
 }
 
-// Helper function to write data to a CSV
-export function writeDataToCSV(data: ParticipantData[]): void {
-    const headers = ["Participant", "Condition", "VideoIndex", "PinCode", "Guess", "Correct"];
-    const rows = data.map(({ participant, condition, videoIndex, pinCode, guess, correct }) => [
+export interface TLXData {
+    participantId: string;
+    condition: string;
+    mentalDemand: number;
+    physicalDemand: number;
+    temporalDemand: number;
+    performance: number;
+    effort: number;
+    frustration: number;
+}
+
+export function writeDataToCombinedCSV(participantData: ParticipantData[], tlxData: TLXData[]): void {
+    // Create a lookup for TLX data by condition
+    const tlxLookup = new Map(
+        tlxData.map(data => [`${data.participantId}-${data.condition}`, data])
+    );
+
+    // Group participant data by condition
+    const groupedData = participantData.reduce((acc, curr) => {
+        const key = `${curr.participant}-${curr.condition}`;
+        if (!acc.has(key)) {
+            acc.set(key, {
+                participant: curr.participant,
+                condition: curr.condition,
+                totalAttempts: 0,
+                correctAttempts: 0,
+                averageAttempts: 0,
+                tlxData: tlxLookup.get(key)
+            });
+        }
+
+        const group = acc.get(key)!;
+        group.totalAttempts++;
+        if (curr.correct) group.correctAttempts++;
+        group.averageAttempts = group.correctAttempts / group.totalAttempts;
+
+        return acc;
+    }, new Map());
+
+    // Create headers and rows for combined data
+    const headers = [
+        "Participant",
+        "Condition",
+        "CorrectAttempts",
+        "TotalAttempts",
+        "SuccessRate",
+        "MentalDemand",
+        "PhysicalDemand",
+        "TemporalDemand",
+        "Performance",
+        "Effort",
+        "Frustration"
+    ];
+
+    const rows = Array.from(groupedData.values()).map(({
+                                                           participant,
+                                                           condition,
+                                                           correctAttempts,
+                                                           totalAttempts,
+                                                           tlxData
+                                                       }) => [
         participant,
         condition,
-        videoIndex,
-        pinCode,
-        guess,
-        correct.toString()
+        correctAttempts,
+        totalAttempts,
+        (correctAttempts / totalAttempts).toFixed(2),
+        tlxData?.mentalDemand ?? "",
+        tlxData?.physicalDemand ?? "",
+        tlxData?.temporalDemand ?? "",
+        tlxData?.performance ?? "",
+        tlxData?.effort ?? "",
+        tlxData?.frustration ?? ""
     ]);
 
     const csvContent = [headers, ...rows]
         .map(row => row.join(","))
         .join("\n");
 
+    // Save combined data
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "participant_data.csv");
-
-    // Save to the public directory
-    const publicDirPath = path.resolve("../public/participant_data.csv");
-    try {
-        fs.writeFileSync(publicDirPath, csvContent, "utf-8");
-        console.log(`CSV successfully written to ${publicDirPath}`);
-    } catch (error) {
-        console.error("Failed to write CSV to public directory:", error);
-    }
+    saveAs(blob, `study_data_participant_${participantData[0].participant}.csv`);
 }
 
